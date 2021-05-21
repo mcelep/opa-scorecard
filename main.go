@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,11 +12,27 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	controllerClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// StatusViolation represents each violation under status
+type StatusViolation struct {
+	Kind              string `json:"kind"`
+	Name              string `json:"name"`
+	Namespace         string `json:"namespace,omitempty"`
+	Message           string `json:"message"`
+	EnforcementAction string `json:"enforcementAction"`
+}
+
+type WrappedStatusViolation struct {
+	*StatusViolation
+	ConstraintKind string
+	ConstraintName string
+}
 
 const (
 	constraintsGV           = "constraints.gatekeeper.sh/v1beta1"
@@ -122,25 +138,23 @@ func createKubeClientGroupVersion() (controllerClient.Client, error) {
 	return client, nil
 }
 
-func getConstraintViolations() {
+func getConstraintViolations() ([]WrappedStatusViolation, error) {
 	client, err := createKubeClient()
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
 
 	constraints, err := client.ServerResourcesForGroupVersion(constraintsGV)
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
 
 	cClient, err := createKubeClientGroupVersion()
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
 
+	ret := []WrappedStatusViolation{}
 	for _, r := range constraints.APIResources {
 		canList := false
 		for _, verb := range r.Verbs {
@@ -153,23 +167,55 @@ func getConstraintViolations() {
 		if !canList {
 			continue
 		}
-		log.Println(fmt.Sprintf("%s/%s", constraintsGV, r.Name))
 		actual := &unstructured.UnstructuredList{}
 		actual.SetGroupVersionKind(schema.GroupVersionKind{
 			Group:   constraintsGroup,
 			Kind:    r.Kind,
 			Version: constraintsGroupVersion,
 		})
-		//key := controllerClient.ObjectKey{Namespace: "", Name: r.Name}
+
 		err = cClient.List(context.TODO(), actual)
-		//getResult := client.DiscoveryClient.RESTClient().Get().Resource(r.Name).Do(context.Background())
 		if err != nil {
-			log.Println(err)
-			return
+			return nil, err
 		}
-		log.Println(actual)
-		// log.Print(getResult)
+
+		if len(actual.Items) > 0 {
+			for _, constraint := range actual.Items {
+				kind := constraint.GetKind()
+				name := constraint.GetName()
+				namespace := constraint.GetNamespace()
+				log.Default().Printf("Kind:%s, Name:%s, Namespace:%s \n", kind, name, namespace)
+				var obj map[string]interface{} = constraint.Object
+				var status map[string]interface{}
+				data, err := json.Marshal(obj["status"])
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				json.Unmarshal(data, &status)
+				if status["totalViolations"].(float64) > 0 {
+
+					var violations []interface{}
+					data, err := json.Marshal(status["violations"])
+					if err != nil {
+						return nil, err
+					}
+					json.Unmarshal(data, &violations)
+					for _, violation := range violations {
+						data, err := json.Marshal(violation)
+						if err != nil {
+							return nil, err
+						}
+						var viol StatusViolation
+						json.Unmarshal(data, &viol)
+						ret = append(ret, WrappedStatusViolation{ConstraintKind: r.Kind, ConstraintName: r.Name, StatusViolation: &viol})
+					}
+				}
+			}
+		}
+
 	}
+	return ret, nil
 }
 
 func main() {
