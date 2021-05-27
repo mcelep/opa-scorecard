@@ -57,11 +57,11 @@ var (
 	violation = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "violations"),
 		"OPA violations for all constraints",
-		[]string{"kind", "name", "namespace", "msg"}, nil,
+		[]string{"kind", "name", "violating_kind", "violating_name", "violating_namespace", "violation_msg"}, nil,
 	)
 	ticker  *time.Ticker
 	done    = make(chan bool)
-	metrics = make([]prometheus.Metric, 0)
+	metrics = []prometheus.Metric{}
 )
 
 type Exporter struct {
@@ -81,8 +81,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(
 		up, prometheus.GaugeValue, 1,
 	)
-	for _, v := range metrics {
-		ch <- v
+	for _, m := range metrics {
+		ch <- m
 	}
 
 }
@@ -210,7 +210,7 @@ func getConstraintViolations() ([]WrappedStatusViolation, error) {
 						}
 						var viol StatusViolation
 						json.Unmarshal(data, &viol)
-						ret = append(ret, WrappedStatusViolation{ConstraintKind: r.Kind, ConstraintName: r.Name, StatusViolation: &viol})
+						ret = append(ret, WrappedStatusViolation{ConstraintKind: constraint.GetKind(), ConstraintName: constraint.GetName(), StatusViolation: &viol})
 					}
 				}
 			}
@@ -221,7 +221,7 @@ func getConstraintViolations() ([]WrappedStatusViolation, error) {
 }
 
 func (e *Exporter) startTimer() {
-	ticker = time.NewTicker(60 * time.Second)
+	ticker = time.NewTicker(10 * time.Second)
 	go func() {
 		for {
 			select {
@@ -233,13 +233,15 @@ func (e *Exporter) startTimer() {
 				if err != nil {
 					log.Printf("%+v\n", err)
 				}
-				metrics = metrics[:0]
+
+				tmpMetrics := make([]prometheus.Metric, 0)
 
 				for _, v := range violations {
 					//"kind", "name", "namespace", "msg"
-					metric := prometheus.MustNewConstMetric(violation, prometheus.GaugeValue, 1, v.ConstraintKind, v.ConstraintName, v.Namespace, v.Message)
-					metrics = append(metrics, metric)
+					metric := prometheus.MustNewConstMetric(violation, prometheus.GaugeValue, 1, v.ConstraintKind, v.ConstraintName, v.Kind, v.Name, v.Namespace, v.Message)
+					tmpMetrics = append(tmpMetrics, metric)
 				}
+				metrics = tmpMetrics
 			}
 		}
 	}()
