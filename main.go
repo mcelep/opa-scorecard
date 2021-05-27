@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -50,31 +51,29 @@ var (
 	// Metrics
 	up = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "up"),
-		"Was the last Mirth query successful.",
+		"Was the last OPA violation query successful.",
 		nil, nil,
 	)
-	messagesReceived = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "messages_received_total"),
-		"How many messages have been received (per channel).",
-		[]string{"channel"}, nil,
+	violation = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "violations"),
+		"OPA violations for all constraints",
+		[]string{"kind", "name", "namespace", "msg"}, nil,
 	)
+	ticker  *time.Ticker
+	done    = make(chan bool)
+	metrics = make([]prometheus.Metric, 0)
 )
 
 type Exporter struct {
-	mirthEndpoint, mirthUsername, mirthPassword string
 }
 
-func NewExporter(mirthEndpoint string, mirthUsername string, mirthPassword string) *Exporter {
-	return &Exporter{
-		mirthEndpoint: mirthEndpoint,
-		mirthUsername: mirthUsername,
-		mirthPassword: mirthPassword,
-	}
+func NewExporter() *Exporter {
+	return &Exporter{}
 }
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- up
-	//ch <- messagesReceived
+	ch <- violation
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
@@ -82,6 +81,9 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(
 		up, prometheus.GaugeValue, 1,
 	)
+	for _, v := range metrics {
+		ch <- v
+	}
 
 }
 
@@ -218,12 +220,36 @@ func getConstraintViolations() ([]WrappedStatusViolation, error) {
 	return ret, nil
 }
 
+func (e *Exporter) startTimer() {
+	ticker = time.NewTicker(60 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case t := <-ticker.C:
+				log.Println("Tick at", t)
+				violations, err := getConstraintViolations()
+				if err != nil {
+					log.Printf("%+v\n", err)
+				}
+				metrics = metrics[:0]
+
+				for _, v := range violations {
+					//"kind", "name", "namespace", "msg"
+					metric := prometheus.MustNewConstMetric(violation, prometheus.GaugeValue, 1, v.ConstraintKind, v.ConstraintName, v.Namespace, v.Message)
+					metrics = append(metrics, metric)
+				}
+			}
+		}
+	}()
+}
+
 func main() {
 	flag.Parse()
 
-	getConstraintViolations()
-
-	exporter := NewExporter("test", "test", "test")
+	exporter := NewExporter()
+	exporter.startTimer()
 	prometheus.Unregister(prometheus.NewGoCollector())
 	prometheus.MustRegister(exporter)
 
