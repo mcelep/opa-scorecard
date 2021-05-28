@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -47,6 +48,9 @@ var (
 		"Address to listen on for telemetry")
 	metricsPath = flag.String("web.telemetry-path", "/metrics",
 		"Path under which to expose metrics")
+
+	inCluster = flag.Bool("incluster", false,
+		"Does the exporter run within a K8S cluster, when true it will try to look for K8S service account details in the usual location.")
 
 	namespace = "opa_scorecard"
 	// Metrics
@@ -89,21 +93,26 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 func createConfig() (*restclient.Config, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Println("Could not find user HomeDir" + err.Error())
-		return nil, err
-	}
+	if *inCluster {
+		log.Println("Using incluster K8S client")
+		return rest.InClusterConfig()
+	} else {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			log.Println("Could not find user HomeDir" + err.Error())
+			return nil, err
+		}
 
-	kubeconfig := filepath.Join(home, ".kube", "config")
+		kubeconfig := filepath.Join(home, ".kube", "config")
 
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		log.Println(err)
-		return nil, err
+		// use the current context in kubeconfig
+		config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		return config, nil
 	}
-	return config, nil
 }
 
 func createKubeClient() (*kubernetes.Clientset, error) {
