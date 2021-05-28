@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	restclient "k8s.io/client-go/rest"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
@@ -87,7 +88,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 }
 
-func createKubeClient() (*kubernetes.Clientset, error) {
+func createConfig() (*restclient.Config, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		log.Println("Could not find user HomeDir" + err.Error())
@@ -98,6 +99,16 @@ func createKubeClient() (*kubernetes.Clientset, error) {
 
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return config, nil
+}
+
+func createKubeClient() (*kubernetes.Clientset, error) {
+
+	config, err := createConfig()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -114,24 +125,12 @@ func createKubeClient() (*kubernetes.Clientset, error) {
 }
 
 func createKubeClientGroupVersion() (controllerClient.Client, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Println("Could not find user HomeDir" + err.Error())
-		return nil, err
-	}
-
-	kubeconfig := filepath.Join(home, ".kube", "config")
-
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	config, err := createConfig()
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	//config.GroupVersion = &schema.GroupVersion{Group: constraintsGroup, Version: constraintsGroupVersion}
-	//config.NegotiatedSerializer = runtime.NewSimpleNegotiatedSerializer(runtime.SerializerInfo{EncodesAsText: true})
-	//client, err := rest.RESTClientFor(config)
 	client, err := controllerClient.New(config, controllerClient.Options{})
 	if err != nil {
 		log.Println(err)
