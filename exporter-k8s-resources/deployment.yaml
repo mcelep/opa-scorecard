@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: opa-exporter
+  name: opa-exporter
+  namespace: opa-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opa-exporter
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: opa-exporter
+    spec:
+      containers:
+      - image: mcelep/opa_scorecard_exporter:v0.0.2
+        name: opa-scorecard-exporter-ldscm
+        resources: {}
+status: {}
