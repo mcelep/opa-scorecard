@@ -1,8 +1,0 @@
-#@ load("@ytt:overlay", "overlay")
-
-#@overlay/match by=overlay.subset({"apiVersion":"constraints.gatekeeper.sh/v1beta1"}) 
----
-#@overlay/match missing_ok=True
-spec:
-  #@overlay/match missing_ok=True
-  enforcementAction: dryrun

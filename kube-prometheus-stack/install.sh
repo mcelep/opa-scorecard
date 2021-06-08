@@ -1,5 +1,6 @@
 #!/bin/bash
 
+kubectl create namespace prometheus
 
 kubectl apply -f cm-custom-dashboard.yaml -n prometheus
 

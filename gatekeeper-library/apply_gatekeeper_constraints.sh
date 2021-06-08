@@ -4,7 +4,6 @@ set -eux
 
 kustomize build library/library/general | kubectl apply -n styra-system -f -
 
-
 constraints=$(find library/library/general -name constraint.yaml)
 
 for c in $constraints
