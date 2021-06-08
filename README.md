@@ -9,11 +9,11 @@ status: draft
 
 # Expose Open Policy Agent/Gatekeeper Violations for Kubernetes Applications with Prometheus and Grafana
 
-Application teams that just start to use Kubernetes might find it a bit difficult to get into as Kubernetes is a quiet complex & large ecosystem([CNCF ecosystem ](https://landscape.cncf.io/)). Moreover, although Kubernetes is starting to mature, it's still being developed very actively and it keeps getting new featuers at a facer pace than many other enterprise software out there. On top of that, Kubernetes deployments due to the integration requirements into the rest of a company's ecosystem (Authenticaton, Authorization, Security, Network,storage) are tailored specifically for each company. So even for a seasoned Kubernetes expert there are usually many things to consider to deploy an application in a way that it fulfills security, resiliency, performance requirements. How can you assure that applications that run on Kubernetes keep fulfilling those requirements?
+Application teams that just start to use Kubernetes might find it a bit difficult to get into as Kubernetes is a quiet complex & large ecosystem(see CNCF ecosystem [here](https://landscape.cncf.io/)). Moreover, although Kubernetes is starting to mature, it's still being developed very actively and it keeps getting new featuers at a facer pace than many other enterprise software out there. On top of that, Kubernetes deployments due to the integration requirements into the rest of a company's ecosystem (Authenticaton, Authorization, Security, Network,storage) are tailored specifically for each company. So even for a seasoned Kubernetes expert there are usually many things to consider to deploy an application in a way that it fulfills security, resiliency, performance requirements. How can you assure that applications that run on Kubernetes keep fulfilling those requirements?
 
 ## Enter OPA/Gatekeeper
 
-[Open Policy Agent](https://www.openpolicyagent.org/) and its Kubernetes(K8S) targeting component [Gatekeeper](https://github.com/open-policy-agent/gatekeeper) gives you means to enforce policies on Kubernetes clusters. What we mean by policies here, is a formal definition of rules & best practices & behavior that you want to see in your company's Kubernetes clusters. When using OPA, you use a Domain Specific Language called [Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) and you write down policies in *Rego* language. By doing this, you leave no room for misinterpretations that would maybe if you tried to explain a policy in free text on your company's internal wiki.
+[Open Policy Agent](https://www.openpolicyagent.org/) and its Kubernetes(K8S) targeting component [Gatekeeper](https://github.com/open-policy-agent/gatekeeper) gives you means to enforce policies on Kubernetes clusters. What we mean by policies here, is a formal definition of rules & best practices & behavior that you want to see in your company's Kubernetes clusters. When using OPA, you use a Domain Specific Language called [Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) and you write down policies in **Rego** language. By doing this, you leave no room for misinterpretations that would maybe if you tried to explain a policy in free text on your company's internal wiki.
 
 Moreover, when using Gatekeeper, different policies can have different enforcement actions. There might be certain policies that are treated as **MUST** whereas there might be policies which are **NICE-TO-HAVE**. A **MUST** policy will stop a Kubernetes resource being admissioned onto a cluster and a **NICE-TO-HAVE** policy will only cause warning messages which should be noted by platform users.
 
@@ -40,32 +40,42 @@ Bear in mind that, you will need to create an OPA-ready of your production readi
 
 For our blog post, we will be using an open source project: [gatekeeper-library](https://github.com/open-policy-agent/gatekeeper-library) which contains a good set of example constraints. Moreover, the project structure is quite helpful in the sense of providing an example of how you can go about managing the OPA constraints. Rego language which is used for creating OPA policies should be unit tested thoroughly and in  [src folder](https://github.com/open-policy-agent/gatekeeper-library/tree/master/src/general), you can find  pure rego files and unit tests. In [this folder](https://github.com/open-policy-agent/gatekeeper-library/tree/master/library/general), there are the templates that are created out of the rego files in the [src folder](https://github.com/open-policy-agent/gatekeeper-library/tree/master/src/general) and for each template there's an example constraint together with some target data that would result in both positive and negative results for the constraint. Rego based policies can get quite complex, so in our view it's a must to have rego unit tests which cover both **happy & unhappy** paths.
 
-As mentioned earlier, there might be certain constraints which you don't want to directly enforce(MUST ve NICE-TO-HAVE) e.g. on a dev cluster you might not want to enforce **>1 replicas** or maybe before you enforce a specific constraint you might want to give platform users enough grace period to take the necessary precautions. You control whether a constraint blocks a K8S resource from getting admitted is via ```spec.enforcementAction``` property. By default, ```enforcementAction``` is set to ```deny```. In our example, we will install all constraints with  ```enforcementAction: dryrun``` property, this will make sure that we don't directly impact any workload running on K8S clusters. The details of *dryrun* enforcement action are explained [here](https://open-policy-agent.github.io/gatekeeper/website/docs/violations/#dry-run-enforcement-action).
+As mentioned earlier, there might be certain constraints which you don't want to directly enforce(MUST ve NICE-TO-HAVE) e.g. on a dev cluster you might not want to enforce **>1 replicas** or maybe before you enforce a specific constraint you might want to give platform users enough grace time to take the necessary precautions (as opposed to blocking their changes suddenly). You control whether a constraint blocks a K8S resource from getting admitted is via ```spec.enforcementAction``` property. By default, ```enforcementAction``` is set to ```deny```. In our example, we will install all constraints with  ```enforcementAction: dryrun``` property, this will make sure that we don't directly impact any workload running on K8S clusters. The details of *dryrun* enforcement action are explained [here](https://open-policy-agent.github.io/gatekeeper/website/docs/violations/#dry-run-enforcement-action).
 
 
-### Prometheus Metrics
+### Prometheus Exporter 
+
+We decided to use [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/) for gathering constraint violation metrics and displaying them, as these are good and popular open-source tools.
+
+For exporting/emitting Prometheus metrics, we've written a small program in Golang that uses the [prometheus golang library](https://github.com/prometheus/client_golang). This program uses the Kubernetes API so that it discovers constraints and for each constraint that fulfills  ```status.totalViolations > 0``` , a Prometheus metric is emitted.
+
+Here's an example metric:
+```
+opa_scorecard_violations{kind="K8sAllowedRepos",name="repo-is-openpolicyagent",violating_kind="Pod",violating_name="utils",violating_namespace="default",violation_enforcement="dryrun",violation_msg="container <utils> has an invalid image repo <mcelep/swiss-army-knife>, allowed repos are [\"openpolicyagent\"]"} 1
+```
+
+Labels are used to represent each constraint violation and we will be using these labels later in the Grafana dashboard.
+
+The Prometheus exporter program listens on tcp port ```9141``` by default and it servers on path ```metrics```. It can run locally on your development box as long as you have a valid Kubernetes configuration in your home folder(i.e. if you can run kubectl and have the right permissions), when running on the cluster a ```incluster``` parameter is passed in so that it knows where to look up for the cluster credentials. Exporter program connects to Kubernetes API every 10 seconds to scrape data from Kubernetes API.
 
 
+## Demo
 
-- https://open-policy-agent.github.io/gatekeeper/website/docs/audit#audit-using-kinds-specified-in-the-constraints-only
+Let's go ahead and prepare our components so that we have a Grafana dashboard to show us which constraints have been violated and how the number of violations evolve over time.
+
+### Required tools/things
+- [Git](https://git-scm.com/downloads): A git cli is required to checkout the repo and 
+- [Kubectl](https://kubernetes.io/docs/tasks/tools/) and a working K8S cluster
+- [Ytt](https://carvel.dev/ytt/): This is a very powerful yaml templating tool, in our setup it's used for dynamically overlaying a key/value pair in all constraints. It's similar to Kustomize, it's more flexibel than Kustomize and heavily used in some [Tanzu](https://tanzu.vmware.com/tanzu) products.
+- [Kustomize](https://kustomize.io/): Gatekeeper-library relies on Kustomize, so we need it too.
+- [Helm](https://helm.sh/): We will install Prometheus and Grafana using helm
 
 
+### Git submodule
 
-### Action
+Run ```git submodule update --init --recursive``` to download gatekeeper-library dependency, gatekeeper-library is a dependency
 
-#### Required tools/things
-
-- Kubectl
-- Ytt
-- Kustomize
-- A working K8S cluster
-- Helm
-
-#### Git submodule
-
-Run ```git submodule update --init --recursive``` to get Gatekeeper dependency
-
-#### Install OPA/Gatekeeper
+### Install OPA/Gatekeeper
 
 We've used [Tanzu Mission Control(TMC)](https://tanzu.vmware.com/mission-control) to provision a Kubernetes cluster and TMC automatically gives us a cluster with Gatekeeper on it. If your cluster does not come with Gatekeeper preinstalled, you can use install it as explained [here](https://open-policy-agent.github.io/gatekeeper/website/docs/install/). If you are familiar with helm, the easiest way to install it is :
 ```bash
@@ -73,24 +83,24 @@ helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 helm install gatekeeper/gatekeeper --generate-name
 ```
 
-#### Install Gatekeeper example constraints
+### Install Gatekeeper example constraints
 
 
 Use script:```./apply_gatekeeper_constraints``` to create example constraints from gatekeeper-library.
 Bear in mind that this script uses ytt to inject ```  enforcementAction: dryrun``` in order to not enforce any actions.
 
 
-#### Install exporter 
+### Install exporter 
 
-```kubectl -n opa-exporter apply -f expoter-k8s-resources```
+```kubectl -n opa-exporter apply -f exporter-k8s-resources```
 
-#### Install kube-stack
+### Install kube-prometheus-stack
 
-```cd kube-stack && ./install.sh```
+```cd kube-prometheus-stack && ./install.sh```
 
 This helm chart comes with some configuration to set up a Grafana dashboard.
 
-#### Log on to Grafana
+### Log on to Grafana
 
 
 !TODO add screenshot
