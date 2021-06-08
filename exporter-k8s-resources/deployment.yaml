@@ -19,7 +19,7 @@ spec:
         app: opa-exporter
     spec:
       containers:
-      - image: mcelep/opa_scorecard_exporter:v0.0.2
+      - image: mcelep/opa_scorecard_exporter:v0.0.3
         name: opa-scorecard-exporter-ldscm
         resources: {}
 status: {}

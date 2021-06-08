@@ -13,7 +13,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -62,7 +61,7 @@ var (
 	violation = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "violations"),
 		"OPA violations for all constraints",
-		[]string{"kind", "name", "violating_kind", "violating_name", "violating_namespace", "violation_msg"}, nil,
+		[]string{"kind", "name", "violating_kind", "violating_name", "violating_namespace", "violation_msg", "violation_enforcement"}, nil,
 	)
 	ticker  *time.Ticker
 	done    = make(chan bool)
@@ -246,7 +245,7 @@ func (e *Exporter) startTimer() {
 
 				for _, v := range violations {
 					//"kind", "name", "namespace", "msg"
-					metric := prometheus.MustNewConstMetric(violation, prometheus.GaugeValue, 1, v.ConstraintKind, v.ConstraintName, v.Kind, v.Name, v.Namespace, v.Message)
+					metric := prometheus.MustNewConstMetric(violation, prometheus.GaugeValue, 1, v.ConstraintKind, v.ConstraintName, v.Kind, v.Name, v.Namespace, v.Message, v.EnforcementAction)
 					tmpMetrics = append(tmpMetrics, metric)
 				}
 				metrics = tmpMetrics

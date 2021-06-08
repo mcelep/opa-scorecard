@@ -1,5 +1,8 @@
-FROM golang:1.16
+FROM golang:1.16 as build
 WORKDIR /app
 COPY . .
 RUN GOOS=linux GOARCH=amd64 go build .
-ENTRYPOINT ["/app/opa_scorecard_exporter","--incluster=true"]
+# Now copy it into our base image.
+FROM gcr.io/distroless/static
+COPY --from=build /app/opa_scorecard_exporter /app/opa_scorecard_exporter
+CMD ["/app/opa_scorecard_exporter","--incluster=true"]
