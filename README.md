@@ -127,7 +127,26 @@ After a few moments, all Prometheus components and Grafana should be up and runn
 
 We haven't provided an ingress or a service of ```type: LoadBalancer``` for our Grafana installation so the easies way to access our Grafana dashboard is by using port-forwarding from kubectl.
 
+Execute the following command to start a port-forwarding session to Grafana:
+```bash
+ kubectl -n prometheus port-forward $(kubectl -n prometheus get pod -l app.kubernetes.io/name=grafana -o name |  cut -d/ -f2)  3000:3000
+ ```
 
+ You can now hit the following url: ```http://localhost:3000``` with your browser and you should see a welcome screen that looks like the screenshot below.
 
+ ![grafana_welcome](./grafana_welcome.png) 
 
-!TODO add screenshot
+The username/password for Grafana as of this writing is ```admin / prom-operator```. If these credentials do not work out you can also discover them via the following commands:
+```bash
+kubectl -n prometheus get secrets prometheus-grafana -o jsonpath='{.data.admin-user}' | base64 -d
+kubectl -n prometheus get secrets prometheus-grafana -o jsonpath='{.data.admin-password}' | base64 -d
+```
+
+Once you are logged in to Grafana you directly go to OPA Dasboard via  [http://localhost:3000/d/YBgRZG6Mz/opa-violations?orgId=1](http://localhost:3000/d/YBgRZG6Mz/opa-violations?orgId=1) or if it dones not work for you can search for the OPA dashboard via this link: [http://localhost:3000/dashboards?query=opa](http://localhost:3000/dashboards?query=opa) and then click on the search result.
+
+Below is a screenshot of the Grafana OPA dashboard we created.
+
+ ![grafana_opa_dashboard](./grafana_opa_dashboard.png) 
+
+You can select a target namespace from the drop-down menu on the upper section of the dashboard. We left the dashboard quite simple, obviously you can extend in endless ways and feel free to share your dashboards by making pull requets to this repo.
+
