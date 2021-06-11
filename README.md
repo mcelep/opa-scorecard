@@ -106,7 +106,7 @@ In folder ```exporter-go``` there's the source code of a program that exports in
 
 To apply K8S resources:
 ```bash
-kubectl create namespace opa-exporter & kubectl -n opa-exporter apply -f exporter-k8s-resources
+kubectl create namespace opa-exporter && kubectl -n opa-exporter apply -f exporter-k8s-resources
 ```
 
 ### 5) Install kube-prometheus-stack
