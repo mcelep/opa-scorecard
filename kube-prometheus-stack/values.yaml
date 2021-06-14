@@ -9,3 +9,7 @@ prometheus:
     - job_name: opa-exporter
       kubernetes_sd_configs:
         - role: service
+
+grafana:
+  plugins:
+    - grafana-piechart-panel
