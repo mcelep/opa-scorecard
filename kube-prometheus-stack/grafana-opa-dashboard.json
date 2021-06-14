@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1623664083456,
+  "iteration": 1623664083458,
   "links": [],
   "panels": [
     {
@@ -287,7 +287,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum by (kind) (opa_scorecard_constraint_violations)",
+          "expr": "sum by (kind) (opa_scorecard_constraint_violations{violating_namespace=\"$namespace\"})",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{kind}}",
@@ -357,7 +357,7 @@
           "refId": "B"
         }
       ],
-      "title": "Enforcement Actions",
+      "title": "Enforcement Actions (cluster-level)",
       "type": "piechart"
     }
   ],
@@ -422,9 +422,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
+          "selected": true,
+          "text": "local-path-storage",
+          "value": "local-path-storage"
         },
         "datasource": "$datasource",
         "definition": "",
