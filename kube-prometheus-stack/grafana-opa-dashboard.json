@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1623664083458,
+  "iteration": 1623760339456,
   "links": [],
   "panels": [
     {
@@ -67,30 +67,6 @@
               {
                 "id": "custom.width",
                 "value": 169
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "kind"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 321
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 313
               }
             ]
           }
@@ -355,9 +331,17 @@
           "interval": "",
           "legendFormat": "enforcementAction=\"deny\"",
           "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(opa_scorecard_constraint_information{enforcementAction=\"warn\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "C"
         }
       ],
-      "title": "Enforcement Actions (cluster-level)",
+      "title": "Enforcement Actions",
       "type": "piechart"
     }
   ],
@@ -422,9 +406,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
-          "text": "local-path-storage",
-          "value": "local-path-storage"
+          "selected": false,
+          "text": "prometheus",
+          "value": "prometheus"
         },
         "datasource": "$datasource",
         "definition": "",

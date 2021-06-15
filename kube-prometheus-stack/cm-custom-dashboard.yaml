@@ -23,7 +23,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 0,
-      "iteration": 1623665241994,
+      "iteration": 1623760339456,
       "links": [],
       "panels": [
         {
@@ -339,6 +339,14 @@ data:
               "interval": "",
               "legendFormat": "enforcementAction=\"deny\"",
               "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(opa_scorecard_constraint_information{enforcementAction=\"warn\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "C"
             }
           ],
           "title": "Enforcement Actions",
@@ -375,6 +383,7 @@ data:
           {
             "allValue": null,
             "current": {
+              "isNone": true,
               "selected": false,
               "text": "None",
               "value": ""
@@ -405,7 +414,7 @@ data:
           {
             "allValue": null,
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "prometheus",
               "value": "prometheus"
             },
