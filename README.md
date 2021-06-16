@@ -26,7 +26,7 @@ If you want to read more about enforcing policies in Kubernetes, check out [this
 
 ## Design
 
-![System design](system_logical.png) 
+![System design](https://raw.githubusercontent.com/mcelep/opa-scorecard/master/system_logical.png) 
 
 The goal of the system we put togehter is to provide insights to developers and platform users insights about OPA constraints that their application might be violating in a given namespace. We use Grafana for creating an example dashboard. Grafana fetches data it needs for creating the dashboard from Prometheus. We've written a small Go program - depicted as 'Constraint Violation Prometheus Exporter' in the diagram above - to query the Kubernetes API for constraint violations and expose data in Prometheus format.
 Gatekeeper/OPA is used in [Audit](https://open-policy-agent.github.io/gatekeeper/website/docs/audit) mode for our setup, we don't leverage Gatekeeper's capability to allow/deny K8S resources. 
@@ -147,7 +147,7 @@ Execute the following command to start a port-forwarding session to Grafana:
 
  You can now hit the following url: ```http://localhost:3000``` with your browser and you should see a welcome screen that looks like the screenshot below.
 
- ![grafana_welcome](./grafana_welcome.png) 
+ ![grafana_welcome](https://raw.githubusercontent.com/mcelep/opa-scorecard/master/grafana_welcome.png) 
 
 The username/password for Grafana as of this writing is ```admin / prom-operator```. If these credentials do not work out you can also discover them via the following commands:
 ```bash
@@ -159,6 +159,6 @@ Once you are logged in to Grafana you directly go to OPA Dasboard via  [http://l
 
 Below is a screenshot of the Grafana OPA dashboard we created:
 
-![grafana_opa_dashboard](./grafana_opa_dashboard.png)
+![grafana_opa_dashboard](https://raw.githubusercontent.com/mcelep/opa-scorecard/master/grafana_opa_dashboard.png)
 
 You can select a target namespace from the drop-down menu on the upper section of the dashboard. We left the dashboard quite simple, obviously you can extend in endless ways and feel free to share your dashboards by making pull requests to [this repo](https://github.com/mcelep/opa-scorecard).
