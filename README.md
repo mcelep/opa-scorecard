@@ -3,13 +3,12 @@ title: Expose Open Policy Agent/Gatekeeper Constraint Violations for Kubernetes 
 tags: ['kubernetes','open policy agent', 'opa','prometheus','grafana']
 status: draft
 ---
-
-*TL;DR: In this blog post, we talk about a solution which gives platform users a succint view about which Gatekeeper constraints are violated by using Prometheus & Grafana.*
-
-  **[Andy Knapp](https://www.linkedin.com/in/andy-knapp-6a72b6108/) and [Murat Celep](https://www.linkedin.com/in/muratcelep/) has worked together on this blog post.**
-
-
 # Expose Open Policy Agent/Gatekeeper Constraint Violations for Kubernetes Applications with Prometheus and Grafana
+
+*TL;DR: In this blog post, we talk about a solution which gives platform users a succinct view about which Gatekeeper constraints are violated by using Prometheus & Grafana.*
+
+**[Andy Knapp](https://www.linkedin.com/in/andy-knapp-6a72b6108/) and [Murat Celep](https://www.linkedin.com/in/muratcelep/) has worked together on this blog post.**
+
 
 Application teams that just start to use Kubernetes might find it a bit difficult to get into it as Kubernetes is a quiet complex & large ecosystem (see [CNCF ecosystem landscape](https://landscape.cncf.io/)). Moreover, although Kubernetes is starting to mature, it's still being developed very actively and it keeps getting new features at a faster pace than many other enterprise software out there. On top of that, Kubernetes platform deployments into the rest of a company's ecosystem (Authenticaton, Authorization, Security, Network,storage) are tailored specifically for each company due to the integration requirements. So even for a seasoned Kubernetes expert there are usually many things to consider to deploy an application in a way that it fulfills security, resiliency, performance requirements. How can you assure that applications that run on Kubernetes keep fulfilling those requirements?
 
@@ -17,7 +16,7 @@ Application teams that just start to use Kubernetes might find it a bit difficul
 
 [Open Policy Agent](https://www.openpolicyagent.org/) (OPA) and its Kubernetes targeting component [Gatekeeper](https://github.com/open-policy-agent/gatekeeper) gives you means to enforce policies on Kubernetes clusters. What we mean by policies here, is a formal definition of rules & best practices & behavior that you want to see in your company's Kubernetes clusters. When using OPA, you use a Domain Specific Language called [Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) to write policies. By doing this, you leave no room for misinterpretations that would occur if you tried to explain a policy in free text on your company's internal wiki.
 
-Moreover, when using Gatekeeper, different policies can have different enforcement actions. There might be certain policies that are treated as **MUST** whereas other policies are treated as **NICE-TO-HAVE**. A **MUST** policy will stop a Kubernetes resource being admissioned onto a cluster and a **NICE-TO-HAVE** policy will only cause warning messages which should be noted by platform users.
+Moreover, when using Gatekeeper, different policies can have different enforcement actions. There might be certain policies that are treated as **MUST** whereas other policies are treated as **NICE-TO-HAVE**. A **MUST** policy will stop a Kubernetes resource being admitted onto a cluster and a **NICE-TO-HAVE** policy will only cause warning messages which should be noted by platform users.
 
 In this blog post, we talk about about how you can:
 
@@ -31,8 +30,8 @@ If you want to read more about enforcing policies in Kubernetes, check out [this
 
 ![System design](https://raw.githubusercontent.com/mcelep/opa-scorecard/master/system_logical.png) 
 
-The goal of the system we put togehter is to provide insights to developers and platform users insights about OPA constraints that their application might be violating in a given namespace. We use Grafana for creating an example dashboard. Grafana fetches data it needs for creating the dashboard from Prometheus. We've written a small Go program - depicted as 'Constraint Violation Prometheus Exporter' in the diagram above - to query the Kubernetes API for constraint violations and expose data in Prometheus format.
-Gatekeeper/OPA is used in [Audit](https://open-policy-agent.github.io/gatekeeper/website/docs/audit) mode for our setup, we don't leverage Gatekeeper's capability to deny K8S resources that don't fulfill policy expectations. 
+The goal of the system we put together is to provide insights to developers and platform users insights about OPA constraints that their application might be violating in a given namespace. We use Grafana for creating an example dashboard. Grafana fetches data it needs for creating the dashboard from Prometheus. We've written a small Go program - depicted as 'Constraint Violation Prometheus Exporter' in the diagram above - to query the Kubernetes API for constraint violations and expose data in Prometheus format.
+Gatekeeper/OPA is used in [Audit](https://open-policy-agent.github.io/gatekeeper/website/docs/audit) mode for our setup, we don't leverage Gatekeeper's capability to deny K8S resources that don't fulfill policy expectations.
 
 
 ### OPA Constraints
