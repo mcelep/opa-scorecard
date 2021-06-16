@@ -26,7 +26,11 @@ If you want to read more about enforcing policies in Kubernetes, check out [this
 
 ## Design
 
-!TODO Diagram
+![System design](system_logical.png) 
+
+The goal of the system we put togehter is to provide insights to developers and platform users insights about OPA constraints that their application might be violating in a given namespace. We use Grafana for creating an example dashboard. Grafana fetches data it needs for creating the dashboard from Prometheus. We've written a small Go program - depicted as 'Constraint Violation Prometheus Exporter' in the diagram above - to query the Kubernetes API for constraint violations and expose data in Prometheus format.
+Gatekeeper/OPA is used in [Audit](https://open-policy-agent.github.io/gatekeeper/website/docs/audit) mode for our setup, we don't leverage Gatekeeper's capability to allow/deny K8S resources. 
+
 
 ### OPA Constraints
 
@@ -57,7 +61,10 @@ opa_scorecard_constraint_violations{kind="K8sAllowedRepos",name="repo-is-openpol
 
 Labels are used to represent each constraint violation and we will be using these labels later in the Grafana dashboard.
 
+
 The Prometheus exporter program listens on tcp port ```9141``` by default and exposes metrics on path ```/metrics```. It can run locally on your development box as long as you have a valid Kubernetes configuration in your home folder (i.e. if you can run kubectl and have the right permissions). When running on the cluster a ```incluster``` parameter is passed in so that it knows where to look up for the cluster credentials. Exporter program connects to Kubernetes API every 10 seconds to scrape data from Kubernetes API.
+
+We've used [this](https://medium.com/teamzerolabs/15-steps-to-write-an-application-prometheus-exporter-in-go-9746b4520e26) blog post as the base for the code.
 
 ## Demo
 
