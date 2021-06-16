@@ -6,6 +6,9 @@ status: draft
 
 *TL;DR: In this blog post, we talk about a solution which gives platform users a succint view about which Gatekeeper constraints are violated by using Prometheus & Grafana.*
 
+  **[Andy Knapp](https://www.linkedin.com/in/andy-knapp-6a72b6108/) and [Murat Celep](https://www.linkedin.com/in/muratcelep/) has worked together on this blog post.**
+
+
 # Expose Open Policy Agent/Gatekeeper Constraint Violations for Kubernetes Applications with Prometheus and Grafana
 
 Application teams that just start to use Kubernetes might find it a bit difficult to get into it as Kubernetes is a quiet complex & large ecosystem (see [CNCF ecosystem landscape](https://landscape.cncf.io/)). Moreover, although Kubernetes is starting to mature, it's still being developed very actively and it keeps getting new features at a faster pace than many other enterprise software out there. On top of that, Kubernetes platform deployments into the rest of a company's ecosystem (Authenticaton, Authorization, Security, Network,storage) are tailored specifically for each company due to the integration requirements. So even for a seasoned Kubernetes expert there are usually many things to consider to deploy an application in a way that it fulfills security, resiliency, performance requirements. How can you assure that applications that run on Kubernetes keep fulfilling those requirements?
