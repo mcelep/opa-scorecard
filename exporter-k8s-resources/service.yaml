@@ -5,6 +5,7 @@ metadata:
   labels:
     app: opa-exporter
   name: opa-exporter
+  namespace: opa-exporter
   annotations:
     prometheus.io/scrape-slow: "true"
 spec:
