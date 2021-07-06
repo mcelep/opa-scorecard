@@ -4,7 +4,8 @@ metadata:
   labels:
     app: opa-exporter
   name: opa-exporter
-  namespace: opa-exporter
+  # namespace: opa-exporter
+  namespace: gatekeeper-system
   annotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
 spec:
@@ -37,8 +38,8 @@ spec:
           requests:
             ephemeral-storage: "0Mi"
           limits:
-            cpu: "200m"
-            memory: "200Mi"
+            cpu: "50m"
+            memory: "100Mi"
         volumes: null
       hostPID: false
       hostIPC: false
