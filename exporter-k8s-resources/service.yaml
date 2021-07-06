@@ -5,8 +5,7 @@ metadata:
   labels:
     app: opa-exporter
   name: opa-exporter
-  # namespace: opa-exporter
-  namespace: gatekeeper-system
+  namespace: opa-exporter
   annotations:
     prometheus.io/scrape-slow: "true"
 spec:

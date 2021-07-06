@@ -9,5 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: default
-  # namespace: opa-exporter
-  namespace: gatekeeper-system
+  namespace: opa-exporter
