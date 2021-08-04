@@ -6,7 +6,7 @@ status: draft
 
 # Expose Open Policy Agent/Gatekeeper Constraint Violations for Kubernetes Applications with Prometheus and Grafana
 
-*TL;DR: In this blog post, we talk about a solution which gives platform users a succinct view about which Gatekeeper constraints are violated by using Prometheus & Grafana.*
+*TL;DR: In this [blog post](https://itnext.io/expose-open-policy-agent-gatekeeper-constraint-violations-with-prometheus-and-grafana-6b7ac92ea07f), we talk about a solution which gives platform users a succinct view about which Gatekeeper constraints are violated by using Prometheus & Grafana.*
 
 **[Andy Knapp](https://www.linkedin.com/in/andy-knapp-6a72b6108/) and [Murat Celep](https://www.linkedin.com/in/muratcelep/) has worked together on this blog post.**
 
