@@ -1,9 +1,9 @@
-name: build-and-push
+name: build-and-push-latest-docker-image
 
 on:
   push:
     branches:
-      - 'master'
+      - "master"
 
 jobs:
   docker:
@@ -19,7 +19,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1 
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -30,4 +30,4 @@ jobs:
         with:
           context: exporter-go
           push: true
-          tags: knappek/opa-scorecard:latest
+          tags: mcelep/opa_scorecard_exporter:latest
