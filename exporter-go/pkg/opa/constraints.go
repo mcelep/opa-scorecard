@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -32,7 +33,7 @@ type Violation struct {
 }
 
 type ConstraintStatus struct {
-	TotalViolations float64 `json:"totalViolations"`
+	TotalViolations float64 `json:"totalViolations,omitempty"`
 	Violations      []*Violation
 }
 
@@ -110,75 +111,113 @@ func createKubeClientGroupVersion(inCluster *bool) (controllerClient.Client, err
 	return client, nil
 }
 
+func print(o interface{}) {
+	b, err := json.MarshalIndent(o, "", "\t")
+	if err != nil {
+		log.Println("Error marshalling: %+v\n", err)
+	} else {
+		log.Println(string(b))
+	}
+}
+
+var (
+	runtimeClassGVR = schema.GroupVersionResource{
+		Group:    "constraints.gatekeeper.sh.",
+		Version:  "v1beta",
+		Resource: "k8sallowedrepos",
+	}
+)
+
 // GetConstraints returns a list of all OPA constraints
 func GetConstraints(inCluster *bool) ([]Constraint, error) {
 	client, err := createKubeClient(inCluster)
 	if err != nil {
 		return nil, err
 	}
+	print(client)
 
 	cClient, err := createKubeClientGroupVersion(inCluster)
 	if err != nil {
 		return nil, err
 	}
-
-	c, err := client.ServerResourcesForGroupVersion(constraintsGV)
+	print(cClient)
+	_, c, err := client.ServerGroupsAndResources()
+	// c, err := client.ServerResourcesForGroupVersion(constraintsGV)
 	if err != nil {
 		return nil, err
 	}
+	// print(c)
 
 	var constraints []Constraint
-	for _, r := range c.APIResources {
-		canList := false
-		for _, verb := range r.Verbs {
-			if verb == "list" {
-				canList = true
-				break
-			}
-		}
-
-		if !canList {
+	for _, apiresources := range c {
+		if apiresources.GroupVersion != constraintsGV {
+			log.Println("Skipping group ", apiresources.GroupVersion)
 			continue
 		}
-		actual := &unstructured.UnstructuredList{}
-		actual.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   constraintsGroup,
-			Kind:    r.Kind,
-			Version: constraintsGroupVersion,
-		})
+		for _, r := range apiresources.APIResources {
+			canList := false
 
-		err = cClient.List(context.TODO(), actual)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(actual.Items) > 0 {
-			for _, item := range actual.Items {
-				kind := item.GetKind()
-				name := item.GetName()
-				namespace := item.GetNamespace()
-				log.Printf("Kind:%s, Name:%s, Namespace:%s \n", kind, name, namespace)
-				var obj = item.Object
-				var constraint Constraint
-				data, err := json.Marshal(obj)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				err = json.Unmarshal(data, &constraint)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-
-				constraints = append(constraints, Constraint{
-					Meta:   ConstraintMeta{Kind: item.GetKind(), Name: item.GetName()},
-					Status: ConstraintStatus{TotalViolations: constraint.Status.TotalViolations, Violations: constraint.Status.Violations},
-					Spec:   ConstraintSpec{EnforcementAction: constraint.Spec.EnforcementAction},
-				})
+			if strings.HasSuffix(r.Name, "/status") {
+				continue
 			}
-		}
 
+			for _, verb := range r.Verbs {
+				if verb == "list" {
+					canList = true
+					break
+				}
+			}
+
+			if !canList {
+				log.Printf("Can't list objets of type %+v\n", r.Name)
+				for _, verb := range r.Verbs {
+					log.Println("Allowed: ", verb)
+				}
+				continue
+			}
+			actual := &unstructured.UnstructuredList{}
+			actual.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   r.Group,
+				Kind:    r.Kind,
+				Version: constraintsGV,
+			})
+
+			err = cClient.List(context.Background(), actual)
+			if err != nil {
+				log.Printf("Error listing: %+v\n", err)
+				continue
+			}
+
+			if len(actual.Items) > 0 {
+				for _, item := range actual.Items {
+					kind := item.GetKind()
+					name := item.GetName()
+					namespace := item.GetNamespace()
+					log.Printf("Kind:%s, Name:%s, Namespace:%s \n", kind, name, namespace)
+					var obj = item.Object
+					var constraint Constraint
+					data, err := json.Marshal(obj)
+					if err != nil {
+						log.Println(err)
+						continue
+					}
+					err = json.Unmarshal(data, &constraint)
+					if err != nil {
+						log.Println(err)
+						continue
+					}
+
+					constraints = append(constraints, Constraint{
+						Meta:   ConstraintMeta{Kind: item.GetKind(), Name: item.GetName()},
+						Status: ConstraintStatus{TotalViolations: constraint.Status.TotalViolations, Violations: constraint.Status.Violations},
+						Spec:   ConstraintSpec{EnforcementAction: constraint.Spec.EnforcementAction},
+					})
+				}
+			} else {
+				log.Println("Nothing returned for Kind ", r.Kind)
+			}
+
+		}
 	}
 	return constraints, nil
 }

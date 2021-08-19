@@ -2,6 +2,7 @@ package opa
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -27,9 +28,16 @@ var (
 )
 
 func ExportViolations(constraints []Constraint) []prometheus.Metric {
+	unique := make(map[string]bool)
 	m := make([]prometheus.Metric, 0)
 	for _, c := range constraints {
 		for _, v := range c.Status.Violations {
+			key := fmt.Sprintf("%v-%v-%v-%v-%v", c.Meta.Kind, c.Meta.Name, v.Name, v.Namespace, v.Message)
+			if _, ok := unique[key]; ok {
+				log.Printf("Found duplicate metrics: %v\n", key)
+				continue
+			}
+			unique[key] = true
 			metric := prometheus.MustNewConstMetric(ConstraintViolation, prometheus.GaugeValue, 1, c.Meta.Kind, c.Meta.Name, v.Kind, v.Name, v.Namespace, v.Message, v.EnforcementAction)
 			m = append(m, metric)
 		}

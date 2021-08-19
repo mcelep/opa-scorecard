@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mcelep/opa_scorecard_exporter/pkg/opa"
+	"github.com/runyontr/opa_scorecard_exporter/pkg/opa"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -47,7 +47,6 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	for _, m := range metrics {
 		ch <- m
 	}
-
 }
 
 func (e *Exporter) startScheduled(t time.Duration) {
@@ -63,6 +62,7 @@ func (e *Exporter) startScheduled(t time.Duration) {
 				if err != nil {
 					log.Printf("%+v\n", err)
 				}
+				log.Println("Found %v constraints", len(constraints))
 				allMetrics := make([]prometheus.Metric, 0)
 				violationMetrics := opa.ExportViolations(constraints)
 				allMetrics = append(allMetrics, violationMetrics...)
