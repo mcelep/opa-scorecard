@@ -23,7 +23,7 @@ var (
 
 	ticker  *time.Ticker
 	done    = make(chan bool)
-	metrics = []prometheus.Metric{}
+	metrics = opa.MetricSet{Metrics: make(map[string]prometheus.Metric)}
 )
 
 type Exporter struct {
@@ -44,9 +44,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(
 		opa.Up, prometheus.GaugeValue, 1,
 	)
-	for _, m := range metrics {
+	metrics.RLock()
+	for _, m := range metrics.Metrics {
 		ch <- m
 	}
+	metrics.RUnlock()
 
 }
 
@@ -63,14 +65,13 @@ func (e *Exporter) startScheduled(t time.Duration) {
 				if err != nil {
 					log.Printf("%+v\n", err)
 				}
-				allMetrics := make([]prometheus.Metric, 0)
-				violationMetrics := opa.ExportViolations(constraints)
-				allMetrics = append(allMetrics, violationMetrics...)
+				allMetrics := make(map[string]prometheus.Metric)
+				opa.ExportViolations(constraints, allMetrics)
+				opa.ExportConstraintInformation(constraints, allMetrics)
 
-				constraintInformationMetrics := opa.ExportConstraintInformation(constraints)
-				allMetrics = append(allMetrics, constraintInformationMetrics...)
-
-				metrics = allMetrics
+				metrics.Lock()
+				metrics.Metrics = allMetrics
+				metrics.Unlock()
 			}
 		}
 	}()

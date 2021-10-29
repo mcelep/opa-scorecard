@@ -2,9 +2,15 @@ package opa
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
+
+type MetricSet struct {
+	sync.RWMutex
+	Metrics map[string]prometheus.Metric
+}
 
 var (
 	namespace = "opa_scorecard"
@@ -26,22 +32,21 @@ var (
 	)
 )
 
-func ExportViolations(constraints []Constraint) []prometheus.Metric {
-	m := make([]prometheus.Metric, 0)
+func ExportViolations(constraints []Constraint, metrics map[string]prometheus.Metric) {
 	for _, c := range constraints {
 		for _, v := range c.Status.Violations {
-			metric := prometheus.MustNewConstMetric(ConstraintViolation, prometheus.GaugeValue, 1, c.Meta.Kind, c.Meta.Name, v.Kind, v.Name, v.Namespace, v.Message, v.EnforcementAction)
-			m = append(m, metric)
+			// Abuse Go map key uniqueness to ensure we avoid duplicate metrics:
+			// Since the entire content of a metric consists of strings, we can concatenate all properties of the metric to make a unique map key
+			// If we encounter a duplicate metric, the previous instance (with the same map key) will simply be overwritten
+			metrics[c.Meta.Kind+c.Meta.Name+v.Kind+v.Name+v.Namespace+v.Message+v.EnforcementAction] = prometheus.MustNewConstMetric(
+				ConstraintViolation, prometheus.GaugeValue, 1, c.Meta.Kind, c.Meta.Name, v.Kind, v.Name, v.Namespace, v.Message, v.EnforcementAction)
 		}
 	}
-	return m
 }
 
-func ExportConstraintInformation(constraints []Constraint) []prometheus.Metric {
-	m := make([]prometheus.Metric, 0)
+func ExportConstraintInformation(constraints []Constraint, metrics map[string]prometheus.Metric) {
 	for _, c := range constraints {
-		metric := prometheus.MustNewConstMetric(ConstraintInformation, prometheus.GaugeValue, 1, c.Meta.Kind, c.Meta.Name, c.Spec.EnforcementAction, fmt.Sprintf("%f", c.Status.TotalViolations))
-		m = append(m, metric)
+		metrics[c.Meta.Kind+c.Meta.Name+c.Spec.EnforcementAction+fmt.Sprintf("%f", c.Status.TotalViolations)] = prometheus.MustNewConstMetric(
+			ConstraintInformation, prometheus.GaugeValue, 1, c.Meta.Kind, c.Meta.Name, c.Spec.EnforcementAction, fmt.Sprintf("%f", c.Status.TotalViolations))
 	}
-	return m
 }
