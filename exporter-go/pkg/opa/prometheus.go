@@ -40,7 +40,7 @@ func ExportViolations(constraints []Constraint) []prometheus.Metric {
 func ExportConstraintInformation(constraints []Constraint) []prometheus.Metric {
 	m := make([]prometheus.Metric, 0)
 	for _, c := range constraints {
-		metric := prometheus.MustNewConstMetric(ConstraintInformation, prometheus.GaugeValue, 1, c.Meta.Kind, c.Meta.Name, c.Spec.EnforcementAction, fmt.Sprintf("%f", c.Status.TotalViolations))
+		metric := prometheus.MustNewConstMetric(ConstraintInformation, prometheus.GaugeValue, c.Status.TotalViolations, c.Meta.Kind, c.Meta.Name, c.Spec.EnforcementAction, fmt.Sprintf("%f", c.Status.TotalViolations))
 		m = append(m, metric)
 	}
 	return m
