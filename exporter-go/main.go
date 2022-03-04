@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/runyontr/opa_scorecard_exporter/pkg/opa"
+	"github.com/runyontr/opa-scorecard/exporter-go/pkg/opa"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

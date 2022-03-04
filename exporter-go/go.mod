@@ -1,4 +1,4 @@
-module github.com/runyontr/opa_scorecard_exporter
+module github.com/runyontr/opa-scorecard/exporter-go
 
 go 1.16
 
