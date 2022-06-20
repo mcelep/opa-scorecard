@@ -1,0 +1,70 @@
+# -- Count of Pod replicas
+replicaCount: 1
+
+# Image configuration for the Agent container
+image:
+  # -- Image repository and name
+  repository: mcelep/opa_scorecard_exporter
+  # -- Overrides the image tag whose default is the chart `appVersion`
+  tag: ""
+  # -- List of image pull secrets
+  pullSecrets: []
+
+# Creation of the Service Account used by the Pod
+serviceAccount:
+  # -- Whether to create the Service Account used by the Pod
+  create: true
+  # -- If not set and `create` is `true`, a name is generated using the fullname template
+  name: ""
+  # -- Annotations to add to the service account
+  annotations: {}
+
+# -- Pod annotations
+podAnnotations: {}
+
+# -- Pod security context
+podSecurityContext: {}
+
+# -- Security context for the Agent container
+securityContext: {}
+# securityContext:
+#   capabilities:
+#     drop:
+#       - ALL
+#   readOnlyRootFilesystem: true
+#   runAsNonRoot: true
+#   runAsUser: 1000
+
+service:
+  # -- Service type
+  type: ClusterIP
+  # -- Service port
+  port: 80
+
+serviceMonitor:
+  # -- Wherter to install `ServiceMonitor` or not
+  enabled: true
+
+# -- Resources for the Agent container
+resources: {}
+
+# -- Pod node selector
+nodeSelector: {}
+
+# -- Pod tolerations
+tolerations: []
+
+# -- Pod affinity
+affinity: {}
+
+rbac:
+  # -- Whether to create Cluster Role and Cluster Role Binding
+  create: true
+  # -- (string) Use an existing ClusterRole/Role
+  useExistingRole:
+  # -- Extra ClusterRole rules
+  extraClusterRoleRules: []
+  # extraClusterRoleRules:
+  #   - apiGroups: []
+  #     resources: []
+  #     verbs: []
