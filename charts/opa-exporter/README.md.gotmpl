@@ -1,0 +1,34 @@
+{{ template "chart.header" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+{{ template "chart.description" . }}
+
+## Get the Helm repository
+
+```shell
+helm repo add opa-exporter https://mcelep.github.io/opa-scorecard
+helm repo update
+```
+
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+
+## Installing the chart
+
+To install the chart with the release name `my-release`:
+
+```shell
+helm install my-release opa-exporter/opa-exporter
+```
+
+## Uninstalling the chart
+
+To uninstall the `my-release` release:
+
+```shell
+helm delete my-release
+```
+
+The command removes all the Kubernetes components associated with the chart and deletes the release.
+
+{{ template "chart.valuesSection" . }}

@@ -29,7 +29,7 @@ If you want to read more about enforcing policies in Kubernetes, check out [this
 
 ## Design
 
-![System design](https://raw.githubusercontent.com/mcelep/opa-scorecard/master/system_logical.png) 
+![System design](https://raw.githubusercontent.com/mcelep/opa-scorecard/master/system_logical.png)
 
 The goal of the system we put together is to provide insights to developers and platform users insights about OPA constraints that their application might be violating in a given namespace. We use Grafana for creating an example dashboard. Grafana fetches data it needs for creating the dashboard from Prometheus. We've written a small Go program - depicted as 'Constraint Violation Prometheus Exporter' in the diagram above - to query the Kubernetes API for constraint violations and expose data in Prometheus format.
 Gatekeeper/OPA is used in [Audit](https://open-policy-agent.github.io/gatekeeper/website/docs/audit) mode for our setup, we don't leverage Gatekeeper's capability to deny K8S resources that don't fulfill policy expectations.
@@ -48,7 +48,7 @@ Bear in mind that, you will need to create a OPA policies off of your production
 For our blog post, we will be using the open source project [gatekeeper-library](https://github.com/open-policy-agent/gatekeeper-library) which contains a good set of example constraints. Moreover, the project structure is quite helpful in the sense of providing an example of how you can manage OPA constraints for your company: Rego language which is used for creating OPA policies should be unit tested thoroughly and in  [src folder](https://github.com/open-policy-agent/gatekeeper-library/tree/master/src/general), you can find  pure rego files and unit tests. [The library folder](https://github.com/open-policy-agent/gatekeeper-library/tree/master/library/general) finally contains the Gatekeeper constraint templates that are created out of the rego files in the src folder. Additionally, there's an example constraint for each template together with some target data that would result in both positive and negative results for the constraint. Rego based policies can get quite complex, so in our view it's a must to have Rego unit tests which cover both **happy & unhappy** paths. We'd recommend to go ahead and fork this project and remove and add policies that represent your company's requirements by following the overall project structure. With this approach you achieve compliance as code that can be easily applied to various environments.
 
 As mentioned earlier, there might be certain constraints which you don't want to directly enforce (MUST vs NICE-TO-HAVE): e.g. on a dev cluster you might not want to enforce **>1 replicas**, or before enforcing a specific constraint you might want to give platform users enough time to take the necessary precautions (as opposed to blocking their changes immediately). You control this behavious using [`enforcementAction`](https://open-policy-agent.github.io/gatekeeper/website/docs/violations#dry-run-enforcement-action). By default, `enforcementAction` is set to `deny` which is what we would describe as a **MUST** condition.
-In our example, we will install all constraints with the **NICE-TO-HAVE** condition using ```enforcementAction: dryrun``` property. This will make sure that we don't directly impact any workload running on K8S clusters (we could also use [`enforcementAction: warn`](https://open-policy-agent.github.io/gatekeeper/website/docs/violations#warn-enforcement-action) for this scenario).
+In our example, we will install all constraints with the **NICE-TO-HAVE** condition using `enforcementAction: dryrun` property. This will make sure that we don't directly impact any workload running on K8S clusters (we could also use [`enforcementAction: warn`](https://open-policy-agent.github.io/gatekeeper/website/docs/violations#warn-enforcement-action) for this scenario).
 
 ### Prometheus Exporter
 
@@ -65,7 +65,7 @@ opa_scorecard_constraint_violations{kind="K8sAllowedRepos",name="repo-is-openpol
 Labels are used to represent each constraint violation and we will be using these labels later in the Grafana dashboard.
 
 
-The Prometheus exporter program listens on tcp port ```9141``` by default and exposes metrics on path ```/metrics```. It can run locally on your development box as long as you have a valid Kubernetes configuration in your home folder (i.e. if you can run kubectl and have the right permissions). When running on the cluster a ```incluster``` parameter is passed in so that it knows where to look up for the cluster credentials. Exporter program connects to Kubernetes API every 10 seconds to scrape data from Kubernetes API.
+The Prometheus exporter program listens on tcp port `9141` by default and exposes metrics on path `/metrics`. It can run locally on your development box as long as you have a valid Kubernetes configuration in your home folder (i.e. if you can run kubectl and have the right permissions). When running on the cluster a `incluster` parameter is passed in so that it knows where to look up for the cluster credentials. Exporter program connects to Kubernetes API every 10 seconds to scrape data from Kubernetes API.
 
 We've used [this](https://medium.com/teamzerolabs/15-steps-to-write-an-application-prometheus-exporter-in-go-9746b4520e26) blog post as the base for the code.
 
@@ -82,10 +82,9 @@ Let's go ahead and prepare our components so that we have a Grafana dashboard to
 - [Helm](https://helm.sh/): We will install Prometheus and Grafana using helm
 - Optional: [Docker](https://www.docker.com/products/docker-desktop): Docker is only optional as we already publish the required image on dockerhub.
 
-
 ### 1) Git submodule update
 
-Run ```git submodule update --init``` to download gatekeeper-library dependency. This command will download the [gatekeeper-library](https://github.com/open-policy-agent/gatekeeper-library) dependency into folder ```gatekeeper-library/library```.
+Run `git submodule update --init` to download gatekeeper-library dependency. This command will download the [gatekeeper-library](https://github.com/open-policy-agent/gatekeeper-library) dependency into folder `gatekeeper-library/library`.
 
 ### 2) Install OPA/Gatekeeper
 
@@ -100,7 +99,7 @@ We've used [Tanzu Mission Control(TMC)](https://tanzu.vmware.com/mission-control
 
 ### 3) Install Gatekeeper example constraints
 
-The script [gatekeeper-library/apply_gatekeeper_constraints.sh](gatekeeper-library/apply_gatekeeper_constraints.sh) uses kustomize to create constraint templates and then applies them on your cluster. So make sure that k8s cli is configured with the right context. After that [Ytt](https://carvel.dev/ytt/) is used to inject ```spec.enforcementAction: dryrun``` in order to have an enforcement action of [dryrun](https://open-policy-agent.github.io/gatekeeper/website/docs/violations/#dry-run-enforcement-action).
+The script [gatekeeper-library/apply_gatekeeper_constraints.sh](gatekeeper-library/apply_gatekeeper_constraints.sh) uses kustomize to create constraint templates and then applies them on your cluster. So make sure that k8s cli is configured with the right context. After that [Ytt](https://carvel.dev/ytt/) is used to inject `spec.enforcementAction: dryrun` in order to have an enforcement action of [dryrun](https://open-policy-agent.github.io/gatekeeper/website/docs/violations/#dry-run-enforcement-action).
 
 Run the script with the following command:
 
@@ -110,11 +109,25 @@ cd gatekeeper-library && ./apply_gatekeeper_constraints.sh
 
 ### 4) Install Prometheus Exporter
 
-In folder [exporter-go](exporter-go) there's the source code of the program that exports information about constraint violations in Prometheus data format. The same folder also includes a script called [build_docker.sh](exporter-go/build_docker.sh) which builds a container and pushes it to [mcelep/opa_scorecard_exporter](https://hub.docker.com/r/mcelep/opa_scorecard_exporter). Container image is already publicly available though, so the only thing you need to do is to apply the resources that are in folder [exporter-k8s-resources](exporter-k8s-resources). The target namespace we selected for deploying our K8S resources is ```opa-exporter```. The K8S resources we want to create have the following functionality:
+#### Using Helm
 
-- ```clusterrole.yaml``` & ```clusterrolebinding.yaml``` -> These resources create a clusterrole to access all resources of group ```constraints.gatekeeper.sh``` and a binding for that clusterrole
-- ```deployment.yaml``` -> A deployment that will run the container image ```mcelep/opa_scorecard_exporter```
-- ```service.yaml``` -> A service that has annotation ```prometheus.io/scrape-slow: "true"``` to make sure that this service gets picked up by Prometheus 
+The exporter can be installed by Using Helm like this:
+
+```bash
+helm repo add opa-exporter https://mcelep.github.io/opa-scorecard
+helm repo update
+helm install demo opa-exporter/opa-exporter
+```
+
+See the [Helm chart](https://github.com/mcelep/opa-scorecard/tree/master/charts/opa-exporter) for more details.
+
+#### Using kubectl
+
+In folder [exporter-go](exporter-go) there's the source code of the program that exports information about constraint violations in Prometheus data format. The same folder also includes a script called [build_docker.sh](exporter-go/build_docker.sh) which builds a container and pushes it to [mcelep/opa_scorecard_exporter](https://hub.docker.com/r/mcelep/opa_scorecard_exporter). Container image is already publicly available though, so the only thing you need to do is to apply the resources that are in folder [exporter-k8s-resources](exporter-k8s-resources). The target namespace we selected for deploying our K8S resources is `opa-exporter`. The K8S resources we want to create have the following functionality:
+
+- `clusterrole.yaml` & `clusterrolebinding.yaml` -> These resources create a clusterrole to access all resources of group `constraints.gatekeeper.sh` and a binding for that clusterrole
+- `deployment.yaml` -> A deployment that will run the container image `mcelep/opa_scorecard_exporter`
+- `service.yaml` -> A service that has annotation `prometheus.io/scrape-slow: "true"` to make sure that this service gets picked up by Prometheus 
 
 To apply these K8S resources:
 
@@ -126,9 +139,9 @@ kubectl create namespace opa-exporter && kubectl -n opa-exporter apply -f export
 
 For installing Prometheus & Grafana, we will use a helm chart called [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack). Folder [kube-prometheus-stack](kube-prometheus-stack) includes the relevant files for this step.
 
-Along with Prometheus and Grafana, we also want to install a custom Grafana Dashboard that will display useful metrics about constraint violations. File [kube-prometheus-stack/cm-custom-dashboard.yaml](kube-prometheus-stack/cm-custom-dashboard.yaml) contains the dashboard configuration that we want to install, note the label ```grafana_dashboard: "1"``` in this file. This label is used as a directive for Grafana to pick up the content of this ConfigurationMap as a dashboard source. The file [grafana-opa-dashboard.json](kube-prometheus-stack/grafana-opa-dashboard.json) is a raw JSON export from Grafana and we used the content of this file to embed it into the configmap under key ```opa-dashboard.json```.
+Along with Prometheus and Grafana, we also want to install a custom Grafana Dashboard that will display useful metrics about constraint violations. File [kube-prometheus-stack/cm-custom-dashboard.yaml](kube-prometheus-stack/cm-custom-dashboard.yaml) contains the dashboard configuration that we want to install, note the label `grafana_dashboard: "1"` in this file. This label is used as a directive for Grafana to pick up the content of this ConfigurationMap as a dashboard source. The file [grafana-opa-dashboard.json](kube-prometheus-stack/grafana-opa-dashboard.json) is a raw JSON export from Grafana and we used the content of this file to embed it into the configmap under key `opa-dashboard.json`.
 
-The install script [kube-prometheus-stack/install.sh](kube-prometheus-stack/install.sh) creates a ConfigMap from file [cm-custom-dashboard.yaml](kube-prometheus-stack/cm-custom-dashboard.yaml) and then it uses helm to install kube-prometheus-stack chart into the namespace ```prometheus```.
+The install script [kube-prometheus-stack/install.sh](kube-prometheus-stack/install.sh) creates a ConfigMap from file [cm-custom-dashboard.yaml](kube-prometheus-stack/cm-custom-dashboard.yaml) and then it uses helm to install kube-prometheus-stack chart into the namespace `prometheus`.
 
 Run the following command to install Prometheus & Grafana:
 
@@ -140,19 +153,20 @@ After a few moments, all Prometheus components and Grafana should be up and runn
 
 ### 6) Log on to Grafana
 
-We haven't provided an ingress or a service of ```type: LoadBalancer``` for our Grafana installation so the easies way to access our Grafana dashboard is by using port-forwarding from kubectl.
+We haven't provided an ingress or a service of `type: LoadBalancer` for our Grafana installation so the easies way to access our Grafana dashboard is by using port-forwarding from kubectl.
 
 Execute the following command to start a port-forwarding session to Grafana:
 
 ```bash
- kubectl -n prometheus port-forward $(kubectl -n prometheus get pod -l app.kubernetes.io/name=grafana -o name |  cut -d/ -f2)  3000:3000
- ```
+kubectl -n prometheus port-forward $(kubectl -n prometheus get pod -l app.kubernetes.io/name=grafana -o name |  cut -d/ -f2)  3000:3000
+```
 
- You can now hit the following url: ```http://localhost:3000``` with your browser and you should see a welcome screen that looks like the screenshot below.
+You can now hit the following url: `http://localhost:3000` with your browser and you should see a welcome screen that looks like the screenshot below.
 
- ![grafana_welcome](https://raw.githubusercontent.com/mcelep/opa-scorecard/master/grafana_welcome.png) 
+![grafana_welcome](https://raw.githubusercontent.com/mcelep/opa-scorecard/master/grafana_welcome.png)
 
-The default username/password for Grafana as of this writing is ```admin / prom-operator```. If these credentials do not work out you can also discover them via the following commands:
+The default username/password for Grafana as of this writing is `admin / prom-operator`. If these credentials do not work out you can also discover them via the following commands:
+
 ```bash
 kubectl -n prometheus get secrets prometheus-grafana -o jsonpath='{.data.admin-user}' | base64 -d
 kubectl -n prometheus get secrets prometheus-grafana -o jsonpath='{.data.admin-password}' | base64 -d
