@@ -4,7 +4,11 @@ kind: ServiceMonitor
 metadata:
 metadata:
   name: {{ include "this.serviceAccountName" . }}
-  labels: {{- include "this.labels" . | nindent 4 }}
+  labels:
+    {{- include "this.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.extraLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   endpoints:
     - honorLabels: true

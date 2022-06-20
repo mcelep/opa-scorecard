@@ -44,6 +44,8 @@ service:
 serviceMonitor:
   # -- Wherter to install `ServiceMonitor` or not
   enabled: true
+  # -- Extra labels
+  extraLabels: {}
 
 # -- Resources for the Agent container
 resources: {}

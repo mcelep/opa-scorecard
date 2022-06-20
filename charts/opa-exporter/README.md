@@ -1,6 +1,6 @@
 # opa-exporter
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.4](https://img.shields.io/badge/AppVersion-0.0.4-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.4](https://img.shields.io/badge/AppVersion-0.0.4-informational?style=flat-square)
 
 Prometheus exporter for OPA Gatekeeper.
 
@@ -54,4 +54,5 @@ The command removes all the Kubernetes components associated with the chart and 
 | serviceAccount.create | bool | `true` | Whether to create the Service Account used by the Pod |
 | serviceAccount.name | string | `""` | If not set and `create` is `true`, a name is generated using the fullname template |
 | serviceMonitor.enabled | bool | `true` | Wherter to install `ServiceMonitor` or not |
+| serviceMonitor.extraLabels | object | `{}` | Extra labels |
 | tolerations | list | `[]` | Pod tolerations |
