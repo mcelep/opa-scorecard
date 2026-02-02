@@ -1,4 +1,4 @@
-FROM golang:1.24 as build
+FROM golang:1.25 as build
 WORKDIR /app
 COPY . .
 RUN GOOS=linux CGO_ENABLED=0 GOARCH=amd64 go build .
